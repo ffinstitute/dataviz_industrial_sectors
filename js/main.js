@@ -1,161 +1,128 @@
-// Dataviz template
-
-
+// D3js - Profitability of Industrial Sectors
 var color=d3.scale.category20c();
-
-var margin = {top: 20, right: 20, bottom: 30, left: 40},
-    width = 400 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
-
+var height = 400;
 
 //var x = d3.scale.ordinal().rangeBands([0, width]);
-var x = d3.scale.linear().range([10, width]);
-var y1 = d3.scale.linear().range([200, 0]);
-var y2 = d3.scale.linear().range([400, 240]);
 
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
-    //.ticks(5);
+var years=[2000,2005,2010,2015];
 
+function updateGraph() {
 
-var yAxis = d3.svg.axis()
-    .scale(y1)
-    .orient("left")
-    .ticks(6);
+    console.info('updateGraph()',vis);
 
-var yAxis2 = d3.svg.axis()
-    .scale(y2)
-    .orient("left")
-    .ticks(6);
+    var xScale = d3.scale.linear().range([50, width-150]);
+    var yScale = d3.scale.linear().range([height-50, 0]);//PCT
+    
+    var xAxis = d3.svg.axis().scale(xScale).orient("bottom")
+        .ticks(5)
+        .tickFormat(function(d){return d})
+        ;
+    
+    var yAxis = d3.svg.axis().scale(yScale).orient("left").ticks(6);
 
-    //.ticks(10, "%");
-
-var svg = d3.select("#graph1").append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var line = d3.svg.line()
+        //.interpolate("basis")
+        .interpolate("linear")
+        .x(function(d) { return xScale(d[0]); })
+        .y(function(d) { return yScale(d[1]); });
 
 
-var color1='#c00';
-var color2='#999';
-
-
-
-function refresh(){
-    getData();
-    update();
-}
-
-
-function update() {
-
-    //console.log('update()');
+    
+    vis.attr("width", $('div.container').width() ).attr("height", 400 );
     // x.domain(data.map(function(d,i) { return i; }));
-    x.domain([0,data.length-1]);
-    
-    
-    var y1max=Math.max(d3.max(data, function(d) { return d.p1; }),d3.max(data, function(d) { return d.p2; }))
-    y1.domain([0, y1max]);
+    xScale.domain([2000,2015]);//2000  2005    2010    2015
+    yScale.domain([3, 22]);
     
     //y1.domain([0, 0.25]);
-    y2.domain([0, 1.2]);
-
 
     // delete prev axis
-    svg.selectAll('.axis').remove();
+    vis.selectAll('.axis').remove();
 
     // x-axis to svg
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + 200 + ")")
+    vis.append("g").attr("class", "x axis")
+        .attr("transform", "translate(0,360)")
+        .style("font-size","16px")
         .call(xAxis);
     
-    // x-axis to svg (a copy)
-    svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + 400 + ")")
-        .call(xAxis);
 
-
-    svg.append("g")
+    vis.append("g")
         .attr("class", "y axis")
+        .style("font-size","16px")
+        .attr("transform", "translate(30,10)")
         .call(yAxis)
-    .append("text")
-        .attr("x", 360)
-        .attr("y", 200)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text("k")
     
     .append("text")
         .attr("transform", "rotate(-90)")
-        .attr("y", 6)
+        .attr("y", -25)
         .attr("dy", ".71em")
         .style("text-anchor", "end")
-        .text("Value");
-
-    svg.append("g")
-        .attr("class", "y axis")
-        .call(yAxis2)
-    .append("text")
-        .attr("x", 360)
-        .attr("y", 400)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text("k")
-    .append("text")
-        .attr("x", -240)
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", ".71em")
-        .style("text-anchor", "end")
-        .text("Cumulative value")
-
-
-    var b1= svg.selectAll(".bar1").data(data);
-
+        .text("%");
     
-    if ($("input[name='rad1']:checked").val()=="bubble") {
-        //bubble
-        b1.enter().append("circle")
-            .attr("class", "bar1")
-            .attr("fill", color1 )
-            .attr("cx", function(d,i) { return x(i); })
-            .attr("cy", function(d) { return 200; })
-            .attr("r", 1)
-            .on("mouseover", mouseover)
-            .on("mousemove", mm1)
-            .on("mouseout", mouseout);
 
-        b1.transition(500)
-            .attr("cx", function(d,i) { return x(i); })
-            .attr("cy", function(d) { return y1(d.p1); })
-            .attr("r", function(d,i){return Math.max(2,width/4/data.length);});
-
-    } else {
-        //rect
-        b1.enter().append("rect")
-            .attr("class", "bar1")
-            .attr("fill", color1 )
-            .attr("x", function(d,i) { return x(i); })
-            .attr("y", function(d) { return 200; })
-            .attr("width", 1)
-            .attr("height", 1 )
-            .on("mouseover", mouseover)
-            .on("mousemove", mm1)
-            .on("mouseout", mouseout);
-
-        b1.transition(500)
-            .attr("x", function(d,i) { return x(i); })
-            .attr("y", function(d) { return y1(d.p1); })
-            .attr("width", function(d,i){return width/2/data.length;})
-            .attr("height", function(d){ return 200 - y1(d.p1); } );
-    }
+    var vline= vis.selectAll("line.vline").data(years);
+    vline.enter().append("line")
+        .attr("class","vline")
+        .attr("stroke","#aaaaaa")
+        .style("stroke-dasharray", ("3, 3"))
+        //.style("opacity",0.5)
+        .attr("stroke-width",1)
+        .style('shape-rendering','crispEdges');
     
-    b1.exit().remove(); 
+    vline.transition()
+        .attr("x1",function(d){return xScale(d);})
+        .attr("x2",function(d){return xScale(d);})
+        .attr("y1",0).attr("y2",height-40);
+
+   
+    //console.log(data.length)
     
+    var group = vis.selectAll(".group")
+        .data(data)
+        .enter().append("g")
+        .attr("class", "group");
+            
+    group.append("path")
+        .attr("d", function(d) { return line(d.d); })
+        .attr("class", "line")
+        .style("cursor", "pointer")
+        .style("stroke", function(d){
+            //console.warn(d);
+            return color(d.name);}
+        )
+        .attr("stroke-width", 1)
+        .attr("fill", "none")
+        /*
+        .on("mouseover", function(d){
+            d3.select(this).style('stroke-width', 4);
+            d3.select(this).style('opacity', 1);
+        })
+        //.on("mousemove", mm1)
+        .on("mouseout", function(d){
+            d3.select(this).style('stroke-width', 2);
+            d3.select(this).style('opacity', 0.5);
+        })
+        */
+        ;
+          
+    group.append("text")
+        .datum(function(d) { return {name: d.name, value: d.d[d.d.length - 1]}; })
+        .attr("transform", function(d) { return "translate(" + xScale(d.value[0]) + "," + yScale(d.value[1]) + ")"; })
+        .attr("x", 5)
+        .attr("dy", ".35em")
+        .attr("fill", "#444444")
+        .style("cursor", "pointer")
+        .text(function(d) { return d.name; });
+
+    group.style('opacity', 1)
+    .on("mouseover",function(d){
+        d3.select(this).select('path').attr("stroke-width", 4).style('opacity', 1);
+        d3.select(this).select('text').style('opacity', 1).style('font-weight','bold');
+
+    }).on("mouseout",function(d){
+        //console.warn(d);
+        d3.select(this).select('path').attr("stroke-width", 2).style('opacity', 0.5);
+        d3.select(this).select('text').style('opacity', 0.5);
+    });
 
 }
 
@@ -164,6 +131,7 @@ function update() {
 /**
  * Tooltip
  */
+
 var ttdiv = d3.select("body").append("div")
 .attr("class", "tooltips")
 .style("opacity", 1e-6);
@@ -172,13 +140,10 @@ function mouseover(){
     ttdiv.transition().duration(200).style("opacity", 1);
 }
 
-
-
 function ttleft(){
   var max = $("body").width()-$("div.tooltips").width() - 20;
     return  Math.min( max , d3.event.pageX + 10 ) + "px";
 }
-
 
 function mouseout(){
     ttdiv.transition().duration(200).style("opacity", 1e-6);
@@ -189,25 +154,43 @@ function mouseout(){
 
 // data part
 var data=[];
-function getData(){
-    data=[];
-    return data;
-}
-
-
-// form //
-//$("input[name='rad1']").tooltip();
-//$("input[name='rad2']").tooltip();
 
 
 $(function() {
 
-    refresh();//compute and redraw graph
-    updateLabels();    
-    getData();
+    //refresh();//compute and redraw graph
+    //updateLabels();    
+    
+    d3.tsv("data.tsv", function(error, json){
+        
+        if (error) {
+            return console.error(error);
+        }
+        
+        //console.log(json);
+        
+        data=[];
+        for(var i in json){
+            var o=json[i];
+            //console.log(o);
+            var d=[];
+            d.push([2000,+o['2000']]);
+            d.push([2005,+o['2005']]);
+            d.push([2010,+o['2010']]);
+            d.push([2015,+o['2015']]);
+            data.push({'name':o.Sector,'d':d});
+        }
+        console.info(data);
+        updateGraph();
+    });
 
-    console.info('main.js');
-
+    console.info('d3.version',d3.version);
+    width=$('div.container').width();
+    vis = d3.select("div#graph1").append("svg:svg")
+        .attr("width", width)
+        .attr("height", height)
+        .attr("class", "vis");
+    
 });
 
 var t;
@@ -218,6 +201,6 @@ d3.select(window).on('resize', function(){
     {
         // all resizable graph should be updated here
         console.log('resizeEnd');
-        //updateGraph();
-    },500);//update all graph
+        updateGraph();
+    },300);//update all graph
 });
